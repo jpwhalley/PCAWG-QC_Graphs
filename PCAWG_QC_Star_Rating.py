@@ -1,14 +1,15 @@
-def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
+def star_rating(data='Supplementary_Table_1.tsv'):
     """Imports the QC measures in the form of a tsv (Supplementary Table 1 in the PCAWG-QC paper), calculates which pass for each QC measure and gives a star rating. Various graphs to show various quality measures are also plotted.
 		INPUT: TSV files saved from google sheets containing the data, metadata file linking the projects to tissure types. Numerical calculations are done using the numpy and scipy.stats packages. Graphs are plotted using matplotlib.pyplot package.
 		FUNCTION: star_rating(data)
 		OUTPUT: A TSV file with the star rating and a series of graphs used to illustrate the different QC measures and the star rating.
-           Time Taken: ~ 30 seconds"""
+        Command line to run (from same folder as the supplementary tables):
+        python -c 'import PCAWG_QC_Star_Rating; PCAWG_QC_Star_Rating.star_rating()'
+        Time Taken: ~ 30 seconds"""
 
     #%% First, caculate the thresholds for the Mean/Median Coverage ration
     import matplotlib.pyplot as plt
     import numpy as np
-    data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'
     f = open(data, 'r') # PCAWG-QC_Summary-of-Measures - QC_Measures.tsv
     line = f.next()
     
@@ -19,11 +20,11 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
     
     for line in f:
         temp = line.split('\t')
-        if (temp[7] != 'NA') and (temp[2] not in norm_ids):
+        if (temp[9] != 'NA') and (temp[2] not in norm_ids):
             norm_ids.append(temp[2])
-            medmean_norm.append(float(temp[7]))
-        if temp[9] != 'NA':
-            medmean_tumo.append(float(temp[9]))
+            medmean_norm.append(float(temp[9]))
+        if temp[11] != 'NA':
+            medmean_tumo.append(float(temp[11]))
 
     f.close()
     
@@ -34,7 +35,7 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
     ax.set_xticklabels(['Normal', 'Tumour'])
     ax.axhline(1, color='k', linestyle='dashed', linewidth=2)
 
-    fig_name = 'figs/MeanMed_boxplot.pdf'
+    fig_name = 'MeanMed_boxplot.pdf'
     fig.show()
     fig.savefig(fig_name, bbox_inches='tight')
 
@@ -50,7 +51,7 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
     fwhm_tumo = []
     
     ## Second, grab the data
-    f = open('data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv', 'r')
+    f = open(data, 'r')
     line = f.next()
     
     # Empty lists to record the individual qc measures for each list
@@ -90,9 +91,9 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
     norm_ids_all = []
     
     # Also open a tsv to record the results
-    g = open('results/PCAWG-QC_Star_Rating.tsv', 'w')
+    g = open('PCAWG-QC_Star_Rating.tsv', 'w')
     temp = line.split('\t')
-    g.write(temp[0] + '\t' + temp[1] + '\t' + temp[2] + '\t' + temp[3] + '\tStar_rating\n')
+    g.write(temp[0] + '\t' + temp[1] + '\t' + temp[2] + '\t' + temp[3]  + '\t' + temp[4] + '\t' + temp[5] + '\tStar_rating\n')
     
     for line in f:
         temp = line.split('\t')
@@ -101,9 +102,9 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
         stars = 0
     
         # Mean
-        if temp[5] != 'NA' and temp[6] != 'NA':
+        if temp[7] != 'NA' and temp[8] != 'NA':
         
-            if float(temp[5]) > 25:
+            if float(temp[7]) > 25:
                 stars += 0.5
                 if temp[2] not in norm_ids_mean:
                     norm_ids_mean.append(temp[2])
@@ -127,8 +128,8 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
                         failed = {'pass':0, 'fail':1}
                         Mean_norm[temp[0]] = failed
             
-            if float(temp[6]) > 30:
-                if float(temp[5]) > 25:
+            if float(temp[8]) > 30:
+                if float(temp[7]) > 25:
                     stars += 0.5
                 if temp[0] in Mean_tumo:
                     passed = Mean_tumo[temp[0]]['pass']
@@ -150,9 +151,9 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
             add = False
     
         # FWHM
-        if temp[8] != 'NA' and temp[10] != 'NA' and temp[7] != 'NA' and temp[9] != 'NA':
+        if temp[10] != 'NA' and temp[12] != 'NA' and temp[9] != 'NA' and temp[11] != 'NA':
         
-            if (float(temp[8]) < 0.205) and (whiskers[0][1] <= float(temp[7]) <= whiskers[1][1]):
+            if (float(temp[10]) < 0.205) and (whiskers[0][1] <= float(temp[9]) <= whiskers[1][1]):
                 stars += 0.5
                 norm_pass = True
                 if temp[2] not in norm_ids_fwhm:
@@ -165,7 +166,7 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
                         passed = {'pass':1, 'fail':0}
                         FWHM_norm[temp[0]] = passed
         
-            elif float(temp[8]) >= 0.205:
+            elif float(temp[10]) >= 0.205:
                 norm_pass = False
                 if temp[2] not in norm_ids_fwhm:
                     norm_ids_fwhm.append(temp[2])
@@ -191,7 +192,7 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
                         FWHM_norm[temp[0]] = failed
                 
             
-            if (float(temp[10]) < 0.34) and (whiskers[2][1] <= float(temp[9]) <= whiskers[3][1]):
+            if (float(temp[12]) < 0.34) and (whiskers[2][1] <= float(temp[11]) <= whiskers[3][1]):
                 if norm_pass:
                     stars += 0.5
                 if temp[0] in FWHM_tumo:
@@ -202,7 +203,7 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
                     passed = {'pass':1, 'fail':0}
                     FWHM_tumo[temp[0]] = passed
         
-            elif float(temp[10]) >= 0.34: # >= 0.54
+            elif float(temp[12]) >= 0.34: # >= 0.54
                 if temp[0] in FWHM_tumo:
                     failed = FWHM_tumo[temp[0]]['fail']
                     failed += 1
@@ -225,9 +226,9 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
             add = False
         
         # Call_Pow
-        if temp[11] != 'NA':
+        if temp[13] != 'NA':
         
-            if int(temp[11]) >= 2.6*10**9:
+            if int(temp[13]) >= 2.6*10**9:
                 stars += 1.0
                 if temp[0] in CallPow:
                     passed = CallPow[temp[0]]['pass']
@@ -249,9 +250,9 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
             add = False
         
         # Diff_Chrom
-        if temp[12] != 'NA' and temp[13] != 'NA':
+        if temp[14] != 'NA' and temp[15] != 'NA':
         
-            if float(temp[12]) < 3:
+            if float(temp[14]) < 3:
                 stars += 0.5
                 if temp[2] not in norm_ids_diff:
                     norm_ids_diff.append(temp[2])
@@ -275,8 +276,8 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
                         DiffChrom_norm[temp[0]] = failed
                 
             
-            if float(temp[13]) < 3:
-                if float(temp[12]) < 3:
+            if float(temp[15]) < 3:
+                if float(temp[14]) < 3:
                     stars += 0.5
                 if temp[0] in DiffChrom_tumo:
                     passed = DiffChrom_tumo[temp[0]]['pass']
@@ -298,9 +299,9 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
             add = False
         
         # Base_Bias
-        if temp[14] != 'NA' and temp[15].rstrip() != 'NA':
+        if temp[16] != 'NA' and temp[17].rstrip() != 'NA':
         
-            if float(temp[14]) < 2:
+            if float(temp[16]) < 2:
                 stars += 0.5
                 if temp[2] not in norm_ids_base:
                     norm_ids_base.append(temp[2])
@@ -323,8 +324,8 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
                     failed = {'pass':0, 'fail':1}
                     BaseBias_norm[temp[0]] = failed
             
-            if float(temp[15].rstrip()) < 2:
-                if float(temp[14]) < 2:
+            if float(temp[17].rstrip()) < 2:
+                if float(temp[16]) < 2:
                     stars += 0.5
                 if temp[0] in BaseBias_tumo:
                     passed = BaseBias_tumo[temp[0]]['pass']
@@ -357,40 +358,38 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
             
             if temp[2] not in norm_ids_all:
                 norm_ids_all.append(temp[2])
-                Med_Mean_size_norm.append(float(temp[7]))
-                fwhm_norm.append(float(temp[8]))
-                # if float(temp[12]) < 20:
-                Mean_size_normal.append(float(temp[5]))
-                MedMean_size_normal.append(abs(1-float(temp[7])))
-                FWHM_size_normal.append(float(temp[8]))
-                CallPow_size_normal.append(float(temp[11]))
-                DiffChrom_size_normal.append(float(temp[12]))
-                BaseBias_size_normal.append(float(temp[14]))
+                Med_Mean_size_norm.append(float(temp[9]))
+                fwhm_norm.append(float(temp[10]))
+                # if float(temp[14]) < 20:
+                Mean_size_normal.append(float(temp[7]))
+                MedMean_size_normal.append(abs(1-float(temp[9])))
+                FWHM_size_normal.append(float(temp[10]))
+                CallPow_size_normal.append(float(temp[13]))
+                DiffChrom_size_normal.append(float(temp[14]))
+                BaseBias_size_normal.append(float(temp[16]))
             
-            Med_Mean_size_tumo.append(float(temp[9]))
-            fwhm_tumo.append(float(temp[10]))
-            Mean_size_tumour.append(float(temp[6]))
-            MedMean_size_tumour.append(abs(1-float(temp[9])))
-            FWHM_size_tumour.append(float(temp[10]))
-            CallPow_size_tumour.append(float(temp[11]))
-            DiffChrom_size_tumour.append(float(temp[13]))
-            BaseBias_size_tumour.append(float(temp[15].rstrip()))
+            Med_Mean_size_tumo.append(float(temp[11]))
+            fwhm_tumo.append(float(temp[12]))
+            Mean_size_tumour.append(float(temp[8]))
+            MedMean_size_tumour.append(abs(1-float(temp[11])))
+            FWHM_size_tumour.append(float(temp[12]))
+            CallPow_size_tumour.append(float(temp[13]))
+            DiffChrom_size_tumour.append(float(temp[15]))
+            BaseBias_size_tumour.append(float(temp[17].rstrip()))
             
             # Write out the star rating to a tsv file
-            g.write(temp[0] + '\t' + temp[1] + '\t' + temp[2] + '\t' + temp[3] + '\t' + str(stars) + '\n')
+            g.write(temp[0] + '\t' + temp[1] + '\t' + temp[2] + '\t' + temp[3]  + '\t' + temp[4] + '\t' + temp[5] + '\t' + str(stars) + '\n')
             
             
         else:
             print 'We do not have complete QC data for this sample'
-            print temp[0] + '\t' + temp[1] + '\t' + temp[2] + '\t' + temp[3]
+            print temp[0] + '\t' + temp[1] + '\t' + temp[2] + '\t' + temp[3]  + '\t' + temp[4] + '\t' + temp[5]
     
     f.close()
     g.close()
     
-    #%% 
-   
     # Get the tissue type linked to each project
-    f = open('results/project2tissue.txt', 'r')
+    f = open('Supplementary_Table_2.tsv', 'r')
     tissues = {}
     line = f.next()
     for line in f:
@@ -482,7 +481,7 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
         for j,item in enumerate(ind+0.1):
             plt.text(item,15, tish[j] +': '+ total[j], color='white', size=5, rotation=90, horizontalalignment='left')
         
-        fig_name = 'figs/' + qcs[k] + '_project_bias.pdf'
+        fig_name = '' + qcs[k] + '_project_bias.pdf'
         plt.savefig(fig_name)
         plt.show()
         plt.clf
@@ -623,7 +622,7 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
         plt.text(item,95, tish[j] +': '+ total[j], color='white', size=5, rotation=90, horizontalalignment='left')
     
     plt.tight_layout()    
-    fig_name = 'figs/starred_project_bias.pdf'
+    fig_name = 'starred_project_bias.pdf'
     plt.savefig(fig_name)
     plt.show()
     plt.clf
@@ -730,7 +729,7 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
             rounded = str(float('%.3g' % total[j]))  + '%'
         plt.text(item,total[j]+0.8, rounded, color='black', size=10) #absolute[j]
     
-    fig_name = 'figs/all_stars.pdf'
+    fig_name = 'all_stars.pdf'
     plt.savefig(fig_name)
     plt.show()
     plt.clf
@@ -776,7 +775,7 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
     ax.set_xlabel('Median/Mean')
     ax.set_ylabel('FWHM')
     
-    fig_name = 'figs/Evenness_med-mean_fwhm_normal_scattterplot.pdf'
+    fig_name = 'Evenness_med-mean_fwhm_normal_scattterplot.pdf'
     fig.savefig(fig_name)
     plt.show()
     plt.clf()
@@ -818,7 +817,7 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
     ax.set_xlabel('Median/Mean')
     ax.set_ylabel('FWHM')
     
-    fig_name = 'figs/Evenness_med-mean_fwhm_tumour_scattterplot.pdf'
+    fig_name = 'Evenness_med-mean_fwhm_tumour_scattterplot.pdf'
     fig.savefig(fig_name)
     plt.show()
     plt.clf()
@@ -873,7 +872,7 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
             ax.set_xlim(miscellanea[qcs[k]][2][0] ,miscellanea[qcs[k]][2][1])
             ax.set_ylim(miscellanea[qcs[k]][3][0] ,miscellanea[qcs[k]][3][1])
             
-            fig.savefig('figs/histograms/' + qcs[k] + '_histogram.pdf')
+            fig.savefig(qcs[k] + '_histogram.pdf')
         
         elif len(miscellanea[qcs[k]][0]) == 3:
             fig = plt.figure()
@@ -888,4 +887,4 @@ def star_rating(data='data/PCAWG-QC_Summary-of-Measures - QC_Measures.tsv'):
             ax.set_xlim(miscellanea[qcs[k]][2][0] ,miscellanea[qcs[k]][2][1])
             ax.set_ylim(miscellanea[qcs[k]][3][0] ,miscellanea[qcs[k]][3][1])
             
-            fig.savefig('figs/histograms/' + qcs[k] + '_histogram.pdf')
+            fig.savefig(qcs[k] + '_histogram.pdf')
