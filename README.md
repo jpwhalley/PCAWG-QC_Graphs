@@ -9,4 +9,7 @@ FUNCTION: star_rating(data)
 
 OUTPUT: A TSV file with the star rating and a series of graphs used to illustrate the different QC measures and the star rating.
 
+Command line to run (from same folder as the supplementary tables):
+python -c 'import PCAWG_QC_Star_Rating; PCAWG_QC_Star_Rating.star_rating()'
+
 Time Taken to run: ~ 30 seconds
