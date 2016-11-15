@@ -1,9 +1,13 @@
 # PCAWG-QC_Graphs
 Python 2.7.11 code used in producing graphs for the PCAWQ-QC paper. Packages required are numpy version 1.10.4, scipy version 0.17.0 and matplotlib version 1.5.1. Other versions may work, though these are the ones I used.
 
+There are two versions, a Jupyter notebook and also a stand alone python script. Installation of Jupyter and iPython, in which I ran these scripts, can be done using Anaconda's website: https://www.continuum.io/downloads
+
+Description of the code is as follows:
+
 Imports the QC measures in the form of a tsv file (Supplementary Table 1 in the PCAWG-QC paper), calculates which pass for each QC measure and gives a star rating. Various graphs to show various quality measures are also plotted.
 		
-INPUT: TSV files containing the data, metadata file linking the projects to tissure types. Numerical calculations are done using the numpy and scipy.stats packages. Graphs are plotted using matplotlib.pyplot package.
+INPUT: TSV files containing the data, metadata file linking the projects to tissure types. Numerical calculations are done using the numpy and scipy.stats packages. Graphs are plotted using matplotlib.pyplot package. Also, collections.Counter is needed for manipulation of the data.
 
 FUNCTION: star_rating(data)
 
