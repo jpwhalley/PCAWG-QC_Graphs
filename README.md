@@ -3,7 +3,7 @@ Python 2.7.11 code used in producing graphs for the PCAWQ-QC paper. Packages req
 
 There are two versions, a Jupyter notebook and also a stand alone python script. Installation of Jupyter and iPython, in which I ran these scripts, can be done using Anaconda's website: https://www.continuum.io/downloads
 
-### Description of the code is as follows:
+### Description of the code:
 
 Imports the QC measures in the form of a tsv file (Supplementary Table 1 in the PCAWG-QC paper), calculates which pass for each QC measure and gives a star rating. Various graphs to show various quality measures are also plotted.
 		
