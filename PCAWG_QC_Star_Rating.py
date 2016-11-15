@@ -1,16 +1,19 @@
 def star_rating(data='Supplementary_Table_1.tsv'):
     """Imports the QC measures in the form of a tsv (Supplementary Table 1 in the PCAWG-QC paper), calculates which pass for each QC measure and gives a star rating. Various graphs to show various quality measures are also plotted.
-		INPUT: TSV files saved from google sheets containing the data, metadata file linking the projects to tissure types. Numerical calculations are done using the numpy and scipy.stats packages. Graphs are plotted using matplotlib.pyplot package.
+		INPUT: TSV files saved from google sheets containing the data, metadata file linking the projects to tissure types. Numerical calculations are done using the numpy and scipy.stats packages. Graphs are plotted using matplotlib.pyplot package. Also, collections.Counter is needed for manipulation of the data.
 		FUNCTION: star_rating(data)
 		OUTPUT: A TSV file with the star rating and a series of graphs used to illustrate the different QC measures and the star rating.
         Command line to run (from same folder as the supplementary tables):
         python -c 'import PCAWG_QC_Star_Rating; PCAWG_QC_Star_Rating.star_rating()'
         Time Taken: ~ 30 seconds"""
 
-    #%% First, caculate the thresholds for the Mean/Median Coverage ration
     import matplotlib.pyplot as plt
     import numpy as np
-    f = open(data, 'r') # PCAWG-QC_Summary-of-Measures - QC_Measures.tsv
+    from collections import Counter
+    from scipy.stats import gaussian_kde
+    
+    ### First, caculate the thresholds for the Mean/Median Coverage ratio, which are the whiskers from the boxplots of the normal and tumour samples.
+    f = open(data, 'r') 
     line = f.next()
     
     medmean_norm = []
@@ -36,7 +39,6 @@ def star_rating(data='Supplementary_Table_1.tsv'):
     ax.axhline(1, color='k', linestyle='dashed', linewidth=2)
 
     fig_name = 'MeanMed_boxplot.pdf'
-    fig.show()
     fig.savefig(fig_name, bbox_inches='tight')
 
     whiskers = [item.get_ydata() for item in bp['whiskers']]
@@ -44,15 +46,16 @@ def star_rating(data='Supplementary_Table_1.tsv'):
     for item in whiskers:
         print item[1]
     
+    ### Second, collect all the QC data and calculate the star rating for each normal-tumour sample pair
+    ## Grab the data
+    f = open(data, 'r')
+    line = f.next()
+    
     # This lists are for the comparison of the evenness of coverage methods
     Med_Mean_size_norm = []
     Med_Mean_size_tumo = []
     fwhm_norm = []
     fwhm_tumo = []
-    
-    ## Second, grab the data
-    f = open(data, 'r')
-    line = f.next()
     
     # Empty lists to record the individual qc measures for each list
     FWHM_size_normal = []
@@ -406,9 +409,88 @@ def star_rating(data='Supplementary_Table_1.tsv'):
     for key in tissues:
         tissues_sorted.append(key)
     tissues_sorted.sort()
+    
+    ### Third, denisty scatter plots for the nomral and tumour samples, to compare how the two evenness of coverage measures compare
+    #% Calculate the point density for the normal samples
+    x = np.array(Med_Mean_size_norm)
+    y = np.array(fwhm_norm)
+    xy = np.vstack([x,y])
+    z = gaussian_kde(xy)(xy)
 
-    ## Third plot the data    
-    # To start with we want to see how the individual projects do for each qc measure and fro the star rating
+    # Sort the points by density, so that the densest points are plotted last
+    idx = z.argsort()
+    x, y, z = x[idx], y[idx], z[idx]
+    
+    # Now the plot
+    fig, ax = plt.subplots()
+    
+    ax.axvline(x=whiskers[0][1], color='k', linestyle='dashed', linewidth=2)
+    plt.text(.85,0.66, 'Fails for Med/Mean', color='red', rotation=90)
+    
+    ax.axvline(x=whiskers[1][1], color='k', linestyle='dashed', linewidth=2)
+    plt.text(1.02,0.7,'Passes for Med/Mean', color='green',rotation=90)
+    plt.text(1.07,0.66, 'Fails for Med/Mean', color='red', rotation=90)
+    
+    ax.axhline(y=0.205, color='k', linestyle='dashed', linewidth=2)
+    plt.text(0.71,0.17,'Passes for FWHM', color='green')
+    plt.text(0.71,0.215,'Fails for FWHM', color='red')
+    # ax.set_yscale('log')
+    # ax.set_xscale('log')
+    
+    ax.set_xlim(.7,1.1)
+    ax.set_ylim(0,.8)
+    
+    cax = ax.scatter(x, y, c=z, s=30, edgecolor='')
+    
+    fig.colorbar(cax)
+    ax.set_xlabel('Median/Mean')
+    ax.set_ylabel('FWHM')
+    
+    fig_name = 'Evenness_med-mean_fwhm_normal_scattterplot.pdf'
+    fig.savefig(fig_name)
+    plt.show()
+    plt.clf()
+    
+    #% Calculate the point density for the tumour samples
+    x = np.array(Med_Mean_size_tumo)
+    y = np.array(fwhm_tumo)
+    xy = np.vstack([x,y])
+    z = gaussian_kde(xy)(xy)
+
+    # Sort the points by density, so that the densest points are plotted last
+    idx = z.argsort()
+    x, y, z = x[idx], y[idx], z[idx]
+    
+    # Plot a new school scatter plot
+    fig, ax = plt.subplots()
+    
+    ax.axvline(x=whiskers[2][1], color='k', linestyle='dashed', linewidth=2)
+    plt.text(whiskers[2][1]+.008,0.7,'Passes for Med/Mean', color='green',rotation=90)
+    plt.text(whiskers[2][1]-.018,0.66, 'Fails for Med/Mean', color='red', rotation=90)
+    
+    ax.axvline(x=whiskers[3][1], color='k', linestyle='dashed', linewidth=2)
+    plt.text(whiskers[3][1]-.018,0.7,'Passes for Med/Mean', color='green',rotation=90)
+    plt.text(whiskers[3][1]+.008,0.66, 'Fails for Med/Mean', color='red', rotation=90)
+    
+    ax.axhline(y=0.34, color='k', linestyle='dashed', linewidth=2)
+    plt.text(0.71,0.35,'Fails for FWHM', color='red')
+    plt.text(0.71,0.3,'Passes for FWHM', color='green')
+    
+    ax.set_xlim(.7,1.1)
+    ax.set_ylim(0,.8)
+    
+    cax = ax.scatter(x, y, c=z, s=30, edgecolor='')
+    
+    fig.colorbar(cax)
+    ax.set_xlabel('Median/Mean')
+    ax.set_ylabel('FWHM')
+    
+    fig_name = 'Evenness_med-mean_fwhm_tumour_scattterplot.pdf'
+    fig.savefig(fig_name)
+    plt.show()
+    plt.clf()
+    
+    ### Fourth, these are individual plots of the qc data, showing what proportion passed and failed for individual projects. These figures did not make it to the final paper, but are kept here for completeness sake.
     qcs = ['Mean_norm', 'Mean_tumo', 'FWHM_norm', 'FWHM_tumo', 'CallPow', 'DiffChrom_norm', 'DiffChrom_tumo', 'BaseBias_norm', 'BaseBias_tumo']
     
     for k,qc in enumerate([Mean_norm, Mean_tumo, FWHM_norm, FWHM_tumo, CallPow, DiffChrom_norm, DiffChrom_tumo, BaseBias_norm, BaseBias_tumo]):
@@ -486,8 +568,8 @@ def star_rating(data='Supplementary_Table_1.tsv'):
         plt.show()
         plt.clf
     
-    # Fourth lets get a star plot of stars with bars
-    from collections import Counter
+    ### Fifth, plots of the star ratings for each project, as well as a bar summarising the star ratings for all the normal-tumour sample pairs in PCAWG.
+    # Get the star rating in a usuable form to plot
     one = []
     onehalf = []
     two = []
@@ -627,9 +709,7 @@ def star_rating(data='Supplementary_Table_1.tsv'):
     plt.show()
     plt.clf
     
-    #% Really Finally lets get a star plot of stars with all bars
-    from collections import Counter
-    
+    #% Now a star plot of stars with all bars
     one = []
     onehalf = []
     two = []
@@ -734,95 +814,7 @@ def star_rating(data='Supplementary_Table_1.tsv'):
     plt.show()
     plt.clf
     
-    # Fifth set of plots concentrating on the distribution of individual QC measures
-    from scipy.stats import gaussian_kde
-        
-    ## Plot Evenness of coverage
-    # Then the evenness of coverage - normal
-    
-    # Calculate the point density
-    x = np.array(Med_Mean_size_norm)
-    y = np.array(fwhm_norm)
-    xy = np.vstack([x,y])
-    z = gaussian_kde(xy)(xy)
-
-    # Sort the points by density, so that the densest points are plotted last
-    idx = z.argsort()
-    x, y, z = x[idx], y[idx], z[idx]
-    
-    # Plot a new school scatter plot
-    fig, ax = plt.subplots()
-    
-    ax.axvline(x=whiskers[0][1], color='k', linestyle='dashed', linewidth=2)
-    plt.text(.85,0.66, 'Fails for Med/Mean', color='red', rotation=90)
-    
-    ax.axvline(x=whiskers[1][1], color='k', linestyle='dashed', linewidth=2)
-    plt.text(1.02,0.7,'Passes for Med/Mean', color='green',rotation=90)
-    plt.text(1.07,0.66, 'Fails for Med/Mean', color='red', rotation=90)
-    
-    ax.axhline(y=0.205, color='k', linestyle='dashed', linewidth=2)
-    plt.text(0.71,0.17,'Passes for FWHM', color='green')
-    plt.text(0.71,0.215,'Fails for FWHM', color='red')
-    # ax.set_yscale('log')
-    # ax.set_xscale('log')
-    
-    ax.set_xlim(.7,1.1)
-    ax.set_ylim(0,.8)
-    
-    cax = ax.scatter(x, y, c=z, s=30, edgecolor='')
-    
-    fig.colorbar(cax)
-    ax.set_xlabel('Median/Mean')
-    ax.set_ylabel('FWHM')
-    
-    fig_name = 'Evenness_med-mean_fwhm_normal_scattterplot.pdf'
-    fig.savefig(fig_name)
-    plt.show()
-    plt.clf()
-    
-    # Then the evenness of coverage - tumour
-    # Create the oldshcool scatter plot
-    
-    # Calculate the point density
-    x = np.array(Med_Mean_size_tumo)
-    y = np.array(fwhm_tumo)
-    xy = np.vstack([x,y])
-    z = gaussian_kde(xy)(xy)
-
-    # Sort the points by density, so that the densest points are plotted last
-    idx = z.argsort()
-    x, y, z = x[idx], y[idx], z[idx]
-    
-    # Plot a new school scatter plot
-    fig, ax = plt.subplots()
-    
-    ax.axvline(x=whiskers[2][1], color='k', linestyle='dashed', linewidth=2)
-    plt.text(whiskers[2][1]+.008,0.7,'Passes for Med/Mean', color='green',rotation=90)
-    plt.text(whiskers[2][1]-.018,0.66, 'Fails for Med/Mean', color='red', rotation=90)
-    
-    ax.axvline(x=whiskers[3][1], color='k', linestyle='dashed', linewidth=2)
-    plt.text(whiskers[3][1]-.018,0.7,'Passes for Med/Mean', color='green',rotation=90)
-    plt.text(whiskers[3][1]+.008,0.66, 'Fails for Med/Mean', color='red', rotation=90)
-    
-    ax.axhline(y=0.34, color='k', linestyle='dashed', linewidth=2)
-    plt.text(0.71,0.35,'Fails for FWHM', color='red')
-    plt.text(0.71,0.3,'Passes for FWHM', color='green')
-    
-    ax.set_xlim(.7,1.1)
-    ax.set_ylim(0,.8)
-    
-    cax = ax.scatter(x, y, c=z, s=30, edgecolor='')
-    
-    fig.colorbar(cax)
-    ax.set_xlabel('Median/Mean')
-    ax.set_ylabel('FWHM')
-    
-    fig_name = 'Evenness_med-mean_fwhm_tumour_scattterplot.pdf'
-    fig.savefig(fig_name)
-    plt.show()
-    plt.clf()
-    
-    ## Finally, some histograms of each QC measure
+    ### Finally histograms to show the distributions of each QC measure for normal and tumour samples.
     miscellanea = {'Mean_size_normal': [['green', 25], ['Mean coverage for normal', 'mean coverage', 'Number of samples'], [0,140], [0,300]], 
      'Mean_size_tumour': [['lightgreen', 30], ['Mean coverage for tumour', 'mean coverage', 'Number of samples'], [0,140], [0,300]], 
      'Med_Mean_size_norm': [['indigo', whiskers[0][1],whiskers[1][1]], ['Ratio of the median coverage over the mean coverage for normal', 'Ratio', 'Number of samples'], [0.5,1.15], [0,700]], 
@@ -859,7 +851,7 @@ def star_rating(data='Supplementary_Table_1.tsv'):
             for index in to_del:
                 del qc[index]
             
-
+        
         if len(miscellanea[qcs[k]][0]) == 2:
             fig = plt.figure()
             ax = fig.add_subplot(111)
