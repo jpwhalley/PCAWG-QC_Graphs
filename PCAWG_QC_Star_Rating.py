@@ -696,7 +696,7 @@ def star_rating(data='Supplementary_Table_1.tsv'):
     locs, labels = plt.xticks(ind + width/2., (organ))
     plt.setp(labels, rotation=90)
     plt.tick_params(axis='both', which='major', labelsize=8)
-    plt.legend((p6[0], p5[0], p4[0], p3[0], p2[0], p1[0], p0[0], pp[0], pq[0]), ('5', '4.5', '4', '3.5', '3', '2.5', '2', '1.5', '1.0'), bbox_to_anchor=(1, .7), fontsize='x-small')
+    plt.legend((p6[0], p5[0], p4[0], p3[0], p2[0], p1[0], p0[0], pp[0], pq[0]), ('5', '4.5', '4', '3.5', '3', '2.5', '2', '1.5', '1'), bbox_to_anchor=(1, .7), fontsize='x-small')
     plt.ylim(0,100)
     plt.yticks(range(0, 101, 20), [str(x) + "%" for x in range(0, 101, 20)], fontsize=8)
     
